@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kalkulator Zakat Maal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-hijri@2.1.2/moment-hijri.min.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+          sans-serif;
+        line-height: 1.6;
+        color: #1a1a1a;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 8px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 1.1em;
+        font-weight: 400;
+      }
+
+      .content {
+        padding: 32px 24px;
+      }
+
+      /* Rotating Quotes Section */
+      .quotes-section {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 32px;
+        position: relative;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .quote-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .quote-item {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        opacity: 0;
+        transform: translateY(-50%) translateX(20px);
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+      }
+
+      .quote-item.active {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+        position: absolute;
+      }
+
+      .quote-text {
+        font-size: 1.05em;
+        color: #1e293b;
+        margin-bottom: 12px;
+        font-style: italic;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 6.4em;
+      }
+
+      .quote-source {
+        font-size: 0.9em;
+        color: #059669;
+        font-weight: 600;
+      }
+
+      .quote-dots {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .dot.active {
+        background: #059669;
+        transform: scale(1.2);
+      }
+
+      /* Recipients Section */
+      .recipients-section {
+        background: #f0fdf4;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 32px;
+        border: 1px solid #bbf7d0;
+      }
+
+      .recipients-section h3 {
+        color: #059669;
+        margin-bottom: 20px;
+        font-size: 1.3em;
+        text-align: center;
+      }
+
+      .recipients-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+      }
+
+      .recipient-item {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #059669;
+      }
+
+      .recipient-title {
+        font-weight: 600;
+        color: #059669;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+      }
+
+      .recipient-desc {
+        font-size: 0.85em;
+        color: #64748b;
+        line-height: 1.5;
+      }
+
+      /* Price Display */
+      .price-display {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        margin-bottom: 32px;
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.25);
+      }
+
+      .price-display h3 {
+        margin-bottom: 8px;
+        font-size: 1.1em;
+        font-weight: 500;
+      }
+
+      .price-value {
+        font-size: 1.8em;
+        font-weight: 700;
+      }
+
+      /* Form Styles */
+      .form-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      .form-group {
+        position: relative;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.95em;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: #fafafa;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        background: white;
+      }
+
+      .date-input-wrapper input {
+        cursor: pointer;
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        padding-right: 50px;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+        padding: 18px 32px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin: 24px 0;
+        box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      /* Result Styles */
+      .result {
+        background: #f0fdf4;
+        border: 2px solid #059669;
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 32px;
+        animation: slideIn 0.5s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .result h3 {
+        color: #059669;
+        margin-bottom: 20px;
+        font-size: 1.4em;
+        text-align: center;
+      }
+
+      .result-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #d1fae5;
+      }
+
+      .result-item:last-child {
+        border-bottom: none;
+        font-weight: 700;
+        font-size: 1.2em;
+        color: #059669;
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        margin-top: 16px;
+      }
+
+      /* Calendar Styles */
+      .calendar-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+
+      .calendar-content {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      }
+
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .calendar-nav {
+        background: #059669;
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .calendar-nav:hover {
+        background: #047857;
+        transform: scale(1.05);
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 20px;
+      }
+
+      .calendar-day {
+        padding: 12px 8px;
+        text-align: center;
+        border: 1px solid #f3f4f6;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+      }
+
+      .calendar-day:hover {
+        background: #059669;
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .calendar-day.selected {
+        background: #059669;
+        color: white;
+        font-weight: 700;
+      }
+
+      .calendar-day.today {
+        background: #ef4444;
+        color: white;
+        font-weight: 700;
+      }
+
+      .calendar-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .calendar-buttons button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .btn-primary {
+        background: #059669;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #047857;
+      }
+
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+
+      /* Responsive for quotes */
+      @media (max-width: 768px) {
+        .quotes-section {
+          height: 220px;
+          padding: 20px;
+        }
+
+        .quote-text {
+          font-size: 1em;
+          line-height: 1.5;
+        }
+
+        .container {
+          margin: 8px;
+          border-radius: 16px;
+        }
+
+        .content {
+          padding: 24px 16px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .recipients-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+          gap: 20px;
+        }
+      }
+
+      /* Smooth transitions */
+      * {
+        transition: background-color 0.2s ease, border-color 0.2s ease,
+          color 0.2s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🕌 Kalkulator Zakat Maal</h1>
+        <p>Hitung zakat Anda dengan mudah berdasarkan syariat Islam</p>
+      </div>
+
+      <div class="content">
+        <!-- Rotating Quotes Section -->
+        <div class="quotes-section">
+          <div class="quote-container">
+            <div class="quote-item active">
+              <div class="quote-text">
+                "Dan dirikanlah shalat, tunaikanlah zakat dan ruku'lah beserta
+                orang-orang yang ruku'"
+              </div>
+              <div class="quote-source">QS. Al-Baqarah: 43</div>
+            </div>
+
+            <div class="quote-item">
+              <div class="quote-text">
+                "Ambillah zakat dari sebagian harta mereka, dengan zakat itu
+                kamu membersihkan dan mensucikan mereka"
+              </div>
+              <div class="quote-source">QS. At-Taubah: 103</div>
+            </div>
+
+            <div class="quote-item">
+              <div class="quote-text">
+                "Islam dibangun atas lima perkara: bersaksi bahwa tidak ada
+                Tuhan selain Allah dan Muhammad adalah utusan Allah, mendirikan
+                shalat, menunaikan zakat, haji, dan puasa Ramadhan"
+              </div>
+              <div class="quote-source">HR. Bukhari dan Muslim</div>
+            </div>
+
+            <div class="quote-item">
+              <div class="quote-text">
+                "Zakat membersihkan harta dari hak orang lain dan mensucikan
+                jiwa dari sifat kikir. Harta yang telah dizakati akan mendapat
+                keberkahan Allah SWT."
+              </div>
+              <div class="quote-source">Hikmah Zakat</div>
+            </div>
+
+            <div class="quote-item">
+              <div class="quote-text">
+                "Barangsiapa yang Allah berikan kekayaan kepadanya, namun ia
+                tidak menunaikan zakatnya, maka pada hari kiamat hartanya akan
+                dijadikan seekor ular jantan yang botak"
+              </div>
+              <div class="quote-source">HR. Bukhari</div>
+            </div>
+          </div>
+
+          <div class="quote-dots">
+            <span class="dot active" onclick="showQuote(0)"></span>
+            <span class="dot" onclick="showQuote(1)"></span>
+            <span class="dot" onclick="showQuote(2)"></span>
+            <span class="dot" onclick="showQuote(3)"></span>
+            <span class="dot" onclick="showQuote(4)"></span>
+          </div>
+        </div>
+
+        <!-- Recipients Section -->
+        <div class="recipients-section">
+          <h3>👥 8 Golongan Penerima Zakat (Asnaf)</h3>
+          <div class="recipients-grid">
+            <div class="recipient-item">
+              <div class="recipient-title">1. Fakir</div>
+              <div class="recipient-desc">
+                Orang yang tidak memiliki harta dan pekerjaan untuk memenuhi
+                kebutuhan pokok
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">2. Miskin</div>
+              <div class="recipient-desc">
+                Orang yang memiliki harta/pekerjaan tapi tidak mencukupi
+                kebutuhan pokok
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">3. Amil Zakat</div>
+              <div class="recipient-desc">
+                Petugas yang bertugas mengumpulkan dan mendistribusikan zakat
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">4. Muallaf</div>
+              <div class="recipient-desc">
+                Orang yang baru masuk Islam atau yang hatinya perlu diteguhkan
+                dalam Islam
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">5. Riqab</div>
+              <div class="recipient-desc">
+                Membebaskan budak atau membantu orang yang terlilit hutang
+                karena perjanjian
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">6. Gharim</div>
+              <div class="recipient-desc">
+                Orang yang berhutang untuk kepentingan yang tidak maksiat dan
+                tidak mampu melunasinya
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">7. Fi Sabilillah</div>
+              <div class="recipient-desc">
+                Untuk kepentingan agama Allah seperti dakwah, jihad, dan
+                pendidikan Islam
+              </div>
+            </div>
+            <div class="recipient-item">
+              <div class="recipient-title">8. Ibnu Sabil</div>
+              <div class="recipient-desc">
+                Musafir yang kehabisan bekal dalam perjalanan yang bukan maksiat
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price Display -->
+        <div id="hargaEmasBox" class="price-display">
+          <h3>📈 Harga Emas Hari Ini</h3>
+          <div class="price-value">⏳ Mengambil data...</div>
+        </div>
+
+        <!-- Form -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Jenis Zakat:</label>
+            <select id="jenis">
+              <option value="emas">Emas / Perak(2.5%)</option>
+              <option value="tunai">Uang Tunai / Tabungan (2.5%)</option>
+              <option value="perdagangan">Perdagangan (2.5%)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Jumlah Nilai Harta (Rp):</label>
+            <input
+              type="text"
+              id="nilai"
+              placeholder="Masukkan nilai harta dalam Rupiah"
+              oninput="formatRupiah(this)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Tanggal Mulai Kepemilikan (Hijriah):</label>
+            <div class="date-input-wrapper">
+              <input
+                type="text"
+                id="tanggalHijri"
+                placeholder="YYYY/MM/DD - Klik untuk memilih tanggal"
+                readonly
+              />
+            </div>
+            <small
+              style="
+                color: #6b7280;
+                margin-top: 8px;
+                display: block;
+                font-size: 0.85em;
+              "
+            >
+              Contoh: 1445/03/15 atau masukkan manual jika kalender tidak
+              berfungsi
+            </small>
+          </div>
+        </div>
+
+        <button class="btn" onclick="hitungZakat()">🧮 Hitung Zakat</button>
+
+        <div id="hasil"></div>
+      </div>
+    </div>
+
+    <!-- Calendar Popup -->
+    <div id="calendarPopup" class="calendar-popup">
+      <div class="calendar-content">
+        <div class="calendar-header">
+          <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+          <h3 id="calendarTitle"></h3>
+          <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="calendar-buttons">
+          <button class="btn-primary" onclick="selectDate()">Pilih</button>
+          <button class="btn-secondary" onclick="closeCalendar()">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let hargaPerGramIDR = 0;
+      let currentDate = moment();
+      let selectedDate = null;
+      let currentQuoteIndex = 0;
+      const quotes = document.querySelectorAll(".quote-item");
+      const dots = document.querySelectorAll(".dot");
+
+      // Auto-rotate quotes
+      function rotateQuotes() {
+        quotes[currentQuoteIndex].classList.remove("active");
+        dots[currentQuoteIndex].classList.remove("active");
+
+        currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+
+        quotes[currentQuoteIndex].classList.add("active");
+        dots[currentQuoteIndex].classList.add("active");
+      }
+
+      function showQuote(index) {
+        quotes[currentQuoteIndex].classList.remove("active");
+        dots[currentQuoteIndex].classList.remove("active");
+
+        currentQuoteIndex = index;
+
+        quotes[currentQuoteIndex].classList.add("active");
+        dots[currentQuoteIndex].classList.add("active");
+      }
+
+      // Start quote rotation
+      setInterval(rotateQuotes, 5000);
+
+      // Ambil harga emas real-time
+      async function ambilHargaEmas() {
+        try {
+          const res = await axios.get(
+            "https://logam-mulia-api.vercel.app/prices/anekalogam"
+          );
+          const hargaData = res.data;
+
+          // Cek apakah ada data dan array tidak kosong
+          if (hargaData.data && hargaData.data.length > 0) {
+            hargaPerGramIDR = hargaData.data[0].sell || 1000000;
+
+            document.getElementById("hargaEmasBox").innerHTML = `
+        <h3>📈 Harga Emas ${hargaData.data[0].type.toUpperCase()} Hari Ini</h3>
+        <div class="price-value">Rp ${hargaPerGramIDR.toLocaleString(
+          "id-ID"
+        )}</div>
+        <small>per gram - Jual: Rp ${hargaData.data[0].sell.toLocaleString(
+          "id-ID"
+        )} | Beli: Rp ${hargaData.data[0].buy.toLocaleString("id-ID")}</small>
+        <br><small style="font-size: 0.8em; opacity: 0.8;">Update: ${new Date().toLocaleString(
+          "id-ID"
+        )}</small>
+      `;
+          } else {
+            throw new Error("Data tidak tersedia");
+          }
+        } catch (err) {
+          console.error("Error mengambil harga emas:", err);
+          document.getElementById("hargaEmasBox").innerHTML = `
+      <h3>📈 Harga Emas Hari Ini</h3>
+      <div class="price-value" style="color: #fbbf24;">Menggunakan Estimasi</div>
+      <small>Rp 1.000.000/gram (Default)</small>
+    `;
+          hargaPerGramIDR = 1000000;
+        }
+      }
+
+      ambilHargaEmas();
+
+      function formatRupiah(input) {
+        let angka = input.value.replace(/\D/g, "");
+        input.value = angka.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      }
+
+      function parseRupiah(str) {
+        return parseInt(str.replace(/\./g, "")) || 0;
+      }
+
+      function sudahHaulHijriyah(hijriDateStr) {
+        try {
+          const sekarang = moment();
+          const parts = hijriDateStr.split("/");
+          if (parts.length !== 3) return false;
+
+          const year = parseInt(parts[0]);
+          const month = parseInt(parts[1]) - 1;
+          const day = parseInt(parts[2]);
+
+          const mulai = moment().iYear(year).iMonth(month).iDate(day);
+          const selisihHari = sekarang.diff(mulai, "days");
+
+          return selisihHari >= 354;
+        } catch (error) {
+          console.error("Error calculating haul:", error);
+          return false;
+        }
+      }
+
+      // Calendar Functions
+      function showCalendar() {
+        currentDate = moment();
+        document.getElementById("calendarPopup").style.display = "flex";
+        generateCalendar();
+      }
+
+      function closeCalendar() {
+        document.getElementById("calendarPopup").style.display = "none";
+      }
+
+      function generateCalendar() {
+        try {
+          const hijriYear = parseInt(currentDate.format("iYYYY"));
+          const hijriMonth = parseInt(currentDate.format("iM"));
+
+          const firstDayOfMonth = moment()
+            .iYear(hijriYear)
+            .iMonth(hijriMonth - 1)
+            .iDate(1);
+
+          const monthNames = [
+            "Muharram",
+            "Safar",
+            "Rabiul Awal",
+            "Rabiul Akhir",
+            "Jumadil Awal",
+            "Jumadil Akhir",
+            "Rajab",
+            "Syaban",
+            "Ramadhan",
+            "Syawal",
+            "Dzulqaidah",
+            "Dzulhijjah",
+          ];
+
+          const monthName = monthNames[hijriMonth - 1] + " " + hijriYear + " H";
+          document.getElementById("calendarTitle").textContent = monthName;
+
+          const grid = document.getElementById("calendarGrid");
+          grid.innerHTML = "";
+
+          const daysOfWeek = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+          daysOfWeek.forEach((day) => {
+            const dayHeader = document.createElement("div");
+            dayHeader.textContent = day;
+            dayHeader.style.fontWeight = "bold";
+            dayHeader.style.textAlign = "center";
+            dayHeader.style.padding = "12px 8px";
+            dayHeader.style.background = "#f8fafc";
+            dayHeader.style.fontSize = "13px";
+            dayHeader.style.color = "#059669";
+            dayHeader.style.borderRadius = "8px";
+            dayHeader.style.minHeight = "44px";
+            dayHeader.style.display = "flex";
+            dayHeader.style.alignItems = "center";
+            dayHeader.style.justifyContent = "center";
+            grid.appendChild(dayHeader);
+          });
+
+          const daysInMonth = firstDayOfMonth.iDaysInMonth();
+          const firstDayWeekday = firstDayOfMonth.day();
+
+          const todayHijri = moment();
+          const todayYear = parseInt(todayHijri.format("iYYYY"));
+          const todayMonth = parseInt(todayHijri.format("iM"));
+          const todayDay = parseInt(todayHijri.format("iD"));
+
+          for (let i = 0; i < firstDayWeekday; i++) {
+            const emptyDay = document.createElement("div");
+            emptyDay.className = "calendar-day";
+            emptyDay.style.visibility = "hidden";
+            grid.appendChild(emptyDay);
+          }
+
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement("div");
+            dayElement.className = "calendar-day";
+            dayElement.textContent = day;
+
+            if (
+              hijriYear === todayYear &&
+              hijriMonth === todayMonth &&
+              day === todayDay
+            ) {
+              dayElement.classList.add("today");
+            }
+
+            dayElement.onclick = () => {
+              document
+                .querySelectorAll(".calendar-day.selected")
+                .forEach((el) => el.classList.remove("selected"));
+              dayElement.classList.add("selected");
+              selectedDate = moment()
+                .iYear(hijriYear)
+                .iMonth(hijriMonth - 1)
+                .iDate(day);
+            };
+            grid.appendChild(dayElement);
+          }
+        } catch (error) {
+          console.error("Error generating calendar:", error);
+        }
+      }
+
+      function changeMonth(direction) {
+        try {
+          const currentHijriYear = parseInt(currentDate.format("iYYYY"));
+          const currentHijriMonth = parseInt(currentDate.format("iM"));
+
+          let newMonth = currentHijriMonth + direction;
+          let newYear = currentHijriYear;
+
+          if (newMonth > 12) {
+            newMonth = 1;
+            newYear++;
+          } else if (newMonth < 1) {
+            newMonth = 12;
+            newYear--;
+          }
+
+          currentDate = moment()
+            .iYear(newYear)
+            .iMonth(newMonth - 1)
+            .iDate(1);
+          generateCalendar();
+        } catch (error) {
+          console.error("Error changing month:", error);
+        }
+      }
+
+      function selectDate() {
+        if (selectedDate) {
+          const hijriDateStr =
+            selectedDate.format("iYYYY") +
+            "/" +
+            selectedDate.format("iMM") +
+            "/" +
+            selectedDate.format("iDD");
+          document.getElementById("tanggalHijri").value = hijriDateStr;
+          closeCalendar();
+        } else {
+          alert("Silakan pilih tanggal terlebih dahulu");
+        }
+      }
+
+      // Event listeners
+      document.getElementById("tanggalHijri").onclick = showCalendar;
+
+      document.getElementById("tanggalHijri").ondblclick = function () {
+        this.readOnly = false;
+        this.placeholder = "Masukkan tanggal manual: YYYY/MM/DD";
+        this.focus();
+      };
+
+      document.getElementById("tanggalHijri").onblur = function () {
+        this.readOnly = true;
+        this.placeholder = "YYYY/MM/DD - Klik untuk memilih tanggal";
+      };
+
+      document.getElementById("calendarPopup").onclick = function (e) {
+        if (e.target === this) {
+          closeCalendar();
+        }
+      };
+
+      // Initialize moment-hijri when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        try {
+          const testDate = moment();
+          const hijriTest = testDate.format("iYYYY/iMM/iDD");
+          console.log("Hijri date test:", hijriTest);
+
+          const currentHijri = moment().format("iYYYY/iMM/iDD");
+          const monthNames = [
+            "Muharram",
+            "Safar",
+            "Rabiul Awal",
+            "Rabiul Akhir",
+            "Jumadil Awal",
+            "Jumadil Akhir",
+            "Rajab",
+            "Syaban",
+            "Ramadhan",
+            "Syawal",
+            "Dzulqaidah",
+            "Dzulhijjah",
+          ];
+          const currentMonth = parseInt(moment().format("iM")) - 1;
+          const currentMonthName = monthNames[currentMonth];
+
+          document.getElementById(
+            "tanggalHijri"
+          ).placeholder = `Contoh hari ini: ${currentHijri} (${currentMonthName})`;
+        } catch (error) {
+          console.error("Moment-hijri initialization error:", error);
+          document.getElementById("tanggalHijri").placeholder =
+            "Masukkan tanggal: YYYY/MM/DD";
+        }
+      });
+
+      async function hitungZakat() {
+        const jenis = document.getElementById("jenis").value;
+        const nilai = parseRupiah(
+          document.getElementById("nilai").value || "0"
+        );
+        const tanggalHijri = document.getElementById("tanggalHijri").value;
+        const hasil = document.getElementById("hasil");
+
+        if (!nilai || !tanggalHijri) {
+          hasil.innerHTML = `
+                    <div class="result" style="border-color: #ef4444; background: #fef2f2;">
+                        <h3 style="color: #ef4444;">❌ Input Tidak Lengkap</h3>
+                        <p style="text-align: center; color: #7f1d1d; margin: 0;">Mohon lengkapi semua field yang diperlukan.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        if (!sudahHaulHijriyah(tanggalHijri) && jenis !== "rikaz") {
+          hasil.innerHTML = `
+                    <div class="result" style="border-color: #f59e0b; background: #fffbeb;">
+                        <h3 style="color: #f59e0b;">⏰ Belum Mencapai Haul</h3>
+                        <p style="text-align: center; color: #92400e; margin: 0;">Harta belum mencapai masa kepemilikan 1 tahun hijriah (354 hari). Zakat belum wajib dibayarkan.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        const nisab = 85 * hargaPerGramIDR;
+
+        if (nilai < nisab && jenis !== "rikaz") {
+          hasil.innerHTML = `
+                    <div class="result" style="border-color: #f59e0b; background: #fffbeb;">
+                        <h3 style="color: #f59e0b;">📊 Belum Mencapai Nisab</h3>
+                        <div class="result-item">
+                            <span>Nilai Harta Anda:</span>
+                            <span>Rp ${nilai.toLocaleString("id-ID")}</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Nisab Saat Ini:</span>
+                            <span>Rp ${nisab.toLocaleString("id-ID")}</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Kekurangan:</span>
+                            <span style="color: #f59e0b;">Rp ${(
+                              nisab - nilai
+                            ).toLocaleString("id-ID")}</span>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fef3c7; border-radius: 8px;">
+                            <p style="margin: 0; color: #92400e; font-weight: 500; text-align: center;">
+                                💡 Harta belum mencapai nisab, zakat belum wajib. Namun sedekah tetap dianjurkan.
+                            </p>
+                        </div>
+                    </div>
+                `;
+          return;
+        }
+
+        let persen = 0.025;
+        let jenisLabel = jenis.charAt(0).toUpperCase() + jenis.slice(1);
+
+        if (jenis === "pertanian") {
+          persen = 0.1;
+          jenisLabel = "Pertanian (Irigasi Alami)";
+        }
+        if (jenis === "rikaz") {
+          persen = 0.2;
+          jenisLabel = "Rikaz (Harta Karun)";
+        }
+
+        const zakat = Math.round(nilai * persen);
+
+        hasil.innerHTML = `
+                <div class="result">
+                    <h3>✅ Hasil Perhitungan Zakat</h3>
+                    <div class="result-item">
+                        <span>Jenis Zakat:</span>
+                        <span>${jenisLabel}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Nilai Harta:</span>
+                        <span>Rp ${nilai.toLocaleString("id-ID")}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Persentase Zakat:</span>
+                        <span>${persen * 100}%</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Nisab Saat Ini:</span>
+                        <span>Rp ${nisab.toLocaleString("id-ID")}</span>
+                    </div>
+                    <div class="result-item">
+                        <span><strong>Zakat Wajib Dibayar:</strong></span>
+                        <span><strong>Rp ${zakat.toLocaleString(
+                          "id-ID"
+                        )}</strong></span>
+                    </div>
+                    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-radius: 12px; border-left: 4px solid #059669;">
+                        <p style="margin: 0; color: #064e3b; font-weight: 600; text-align: center; font-size: 0.95em;">
+                            🕌 Segera tunaikan zakat Anda kepada 8 golongan yang berhak menerima (asnaf). 
+                            Zakat adalah amanah Allah SWT dan bagian dari rukun Islam.
+                        </p>
+                        <div style="margin-top: 12px; text-align: center;">
+                            <small style="color: #065f46; font-style: italic;">
+                                "Dan Allah akan melipatgandakan balasan bagi orang-orang yang berzakat"
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+    </script>
+  </body>
+</html>
